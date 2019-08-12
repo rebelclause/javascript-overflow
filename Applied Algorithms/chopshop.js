@@ -7,75 +7,89 @@ let cutList = [
     { qty: 22, feet: 22, inch: 8 },
     { qty: 12, feet: 12, inch: 3 },
 ]
-// add id field to cutlist retaining this in the array for check against final manifest entries, if necessary
-// forEach doesn't return an array, you know...
+// add id field to cutlist retaining this in the array for check against final manifest entries
 cutList.filter((item) => item.qty !== 0).forEach((item, idx) => {item.id = idx + 1})
 
 // could expand objects in number of qty to this or new array, keeping original array entries
 // Or, decrement the item.qty as each new replica is made with item.subId as an identifier
-let pooledCutList = []
+
 let qtyTotal = 0
-
+let pooled = []
 // console.log(cutList)
-// expand cutlist entries by qty to new array, adding subId to each entry
-let cutArray = cutList.map((item, idx) => {
+// expand cutlist entries by qty to new array, pooled, adding subId to each entry
+let arrays = cutList.map((item, idx) => {
+    // forEach works here
+    // aggregate entry qty for a total as each entry(item) is parsed
     qtyTotal += item.qty
-  for (let i = 0; i < item.qty; i++) {
-    let o = Object.create(null)
-    o = Object.assign(o, item)
-    o.subId = i
-    o.id - i
-    // console.log(o)
-    pooledCutList.push(o)
-}})
+    for (let i = 0; i < item.qty; i++) {
+        let o = {}
+        o = Object.assign(o, item)
+        o.subId = i
+        o.id - i
+        // console.log(o) // console.dir(o) would be better
+        pooled.push(o)
+    }
+    return pooled
+})
 
+// the list manifest will be chunked from
+console.dir(pooled)
+console.log('arrays.length: ', arrays.length)
+
+// make sure the sum of qty matches the number
 let valid
-if (qtyTotal === pooledCutList.length) {
+if (qtyTotal === pooled.length) {
     valid = true
 } else {
     valid = false
 }
-    
-// console.log(cutArray)
-// console.log(pooledCutList)
-console.log(`qty total: ${qtyTotal}. The manifest data is ${valid ? 'ready.' : 'not ready for use.' }`)
+console.log(`qty total: ${qtyTotal} pooled total: ${pooled.length}
+The manifest data is ${valid ? 'ready.' : 'not ready for use.' }`)
 
-try {
-    let batchsize = input('Enter a batch size: ')
-    if (batchsize === "" || batchsize >= 100 || batchsize <= 0 || (!isInteger(batchsize))){
-        throw new Error('A number between 1 and 100...')
-    } 
-} catch(e) {
+// no exit, program continues
+console.log("Producing manifest...")
 
-}
-console.log(`Producing manifest...`)
-
-// slice the array 
-function produceManifest(start, end, batchsize) {
-    for (i = 0; i <= pooledCutList.length -1; i++ ) {
+// chunk pool by batchsize
+let chunkedList = []
+function produceManifest(start, batchsize) {
+    let i = start
+    let k = 0
+   do {
+        let qty, feet, inch, id, subId
         let x = []
-        mod %= batchsize
-        console.log(batchsize, ': ', i)
-        if (mod === 0) {
-            x.push(pooledCutList[i])
-            arrayedCutList.push(x)
-            end = (batchsize) + i
-            produceManifest(i, end)
-        }
-        x.push(pooledCutList[i])
-        arrayedCutList = pooledCutList.slice(start, end)
-    }
+        let j = 0
+        do { 
+            // assign objects from the pool into batchsized arrays
+            // console.dir(pooled[i]);
+            // if (typeof pooled[i] === undefined) break;
+            try {
+                ({qty, feet, inch, id, subId} = pooled[i])
+                i ++
+            } catch(e) {
+                // console.error(e)
+                // break
+            }
+            x[j] = {qty, feet, inch, id, subId}
+            // console.log(x[j])
+            j ++
+            if (i >= pooled.length) break;
+            // console.log("getting j: " + j)
+        } while (j <= batchsize - 1) // index in reference array starts at 0
+        chunkedList[k] = [...x]
+        // chunkedList.push[x]
+        // console.dir(chunkedList)
+        k ++
+    } while (i <= pooled.length - 1)
+    // console.dir(chunkedList)
+    return chunkedList
 }
 
-// the list manifest will be chunked from
-console.log(pooledCutList)
 // manifest is an array containing batches of the number requested
-let arrayedCutList = []
-let batchsize = 10
+// do the job
 let start = 0
-let end = batchsize
-let mod = 0
-produceManifest(start, end, batchsize)
+let batchsize = 40
+let printable = produceManifest(start, batchsize)
 
-console.log(arrayedCutList);
+console.dir(printable)
+
 console.log('debug')
